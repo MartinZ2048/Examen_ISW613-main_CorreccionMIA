@@ -1,54 +1,62 @@
-import React, { useEffect, useState } from "react";
-import prestamosData from "../mocks/prestamos.json";
+import React, { useEffect, useState, useCallback } from "react";
 import LoanTable from "../components/LoanTable";
+import { useAuth } from "../context/AuthContext";
+import { getMisPrestamos, devolverEjemplar } from "../services/api";
 
 export default function MyLoansPage() {
+  const { user, isAuthenticated } = useAuth();
   const [prestamos, setPrestamos] = useState([]);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchPrestamos = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+    setIsLoading(true);
+    try {
+      const response = await getMisPrestamos();
+      if (response.success) {
+        setPrestamos(response.data.prestamosActivos || []);
+      } else {
+        setError(response.message);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
-    // Simula un fetch desde el backend
-    const prestamosGuardados = JSON.parse(localStorage.getItem("misPrestamos")) || [];
-    setPrestamos(prestamosGuardados);
-  }, []);
+    fetchPrestamos();
+  }, [fetchPrestamos]);
 
-  const handleDevolver = (idPrestamo) => {
-    const confirmacion = window.confirm("¿Estás seguro de devolver este libro?");
-    if (confirmacion) {
-      //setPrestamos((prev) => prev.filter((p) => p.id !== idPrestamo));
-       const nuevosPrestamos = prestamos.filter((p) => p.id !== idPrestamo);
-      setPrestamos(nuevosPrestamos);
-      localStorage.setItem("misPrestamos", JSON.stringify(nuevosPrestamos));
+  const handleDevolver = async (ejemplarId) => {
+    if (window.confirm("¿Estás seguro de que quieres devolver este libro?")) {
+      try {
+        const response = await devolverEjemplar(ejemplarId);
+        if (response.success) {
+          alert("Libro devuelto correctamente.");
+          fetchPrestamos(); // Vuelve a cargar la lista para reflejar el cambio
+        } else {
+          alert(`Error: ${response.message}`);
+        }
+      } catch (err) {
+        alert(`Error al devolver el libro: ${err.message}`);
+      }
     }
   };
 
-  // Calcular días totales de multa
-  const calcularMulta = () => {
-    const hoy = new Date();
-    return prestamos.reduce((total, p) => {
-      const fechaDev = new Date(p.deberiaDevolverseEl);
-      if (hoy > fechaDev) {
-        const dias = Math.floor((hoy - fechaDev) / (1000 * 60 * 60 * 24));
-        return total + dias;
-      }
-      return total;
-    }, 0);
-  };
-  const diasMulta = calcularMulta();
+  if (isLoading) return <h2 style={{ padding: "2rem" }}>Cargando tus préstamos...</h2>;
+  if (!isAuthenticated) return <h2 style={{ padding: "2rem" }}>Por favor, inicia sesión para ver tus préstamos.</h2>;
+  if (error) return <h2 style={{ padding: "2rem", color: "red" }}>Error: {error}</h2>;
 
   return (
     <div style={{ padding: "2rem" }}>
       <h1>📚 Mis préstamos</h1>
       {prestamos.length > 0 ? (
-        <>
-          <LoanTable prestamos={prestamos} onDevolver={handleDevolver} />
-          {diasMulta > 0 && (
-            <div style={{ marginTop: "1rem", color: "#dc3545", fontWeight: "bold" }}>
-              ⚠️ Tienes una multa acumulada de {diasMulta} días.
-            </div>
-          )}
-        </>
+        <LoanTable prestamos={prestamos} onDevolver={handleDevolver} />
       ) : (
-        <p>No tienes préstamos actualmente.</p>
+        <p>No tienes préstamos activos actualmente.</p>
       )}
     </div>
   );
