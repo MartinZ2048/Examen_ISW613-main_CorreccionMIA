@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "es2016",                     /* Compila a esta versión de JavaScript */
+    "lib": ["esnext"],                       /* Incluye librerías modernas de JS */
+    "skipLibCheck": true,                    /* No revisa los tipos en archivos de declaración (.d.ts) */
+
+    /* Module Resolution */
+    "module": "CommonJS",                    /* Usa el sistema de módulos estándar de Node.js */
+    "moduleResolution": "node",              /* Cómo Node.js busca los módulos */
+    "esModuleInterop": true,                 /* Permite compatibilidad entre CommonJS y ES Modules */
+    
+    /* Strict Type-Checking */
+    "strict": true,                          /* Habilita todas las opciones de chequeo estricto de tipos */
+    "forceConsistentCasingInFileNames": true, /* Evita errores por mayúsculas/minúsculas en los nombres de archivo */
+
+    /* Emitting Files */
+    "sourceMap": true,                       /* Crea archivos .map.js para facilitar el debugging */
+    "outDir": "dist"                         /* Carpeta donde se guardarán los archivos compilados */
+  }
+}

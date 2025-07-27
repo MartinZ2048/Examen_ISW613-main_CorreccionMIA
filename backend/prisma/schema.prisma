@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EstadoUsuario {
+  ACTIVO
+  MOROSO
+  MULTADO
+}
+
+enum TipoUsuario {
+  ALUMNO
+  PROFESOR
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  login        String        @unique
+  password     String
+  nombre       String
+  apellido1    String
+  apellido2    String
+  email        String        @unique
+  calle        String
+  numero       String
+  piso         String?
+  ciudad       String
+  codigoPostal String
+  estado       EstadoUsuario @default(ACTIVO)
+  tipo         TipoUsuario
+
+  // Campos opcionales según tipo
+  telefonoPadres String? // Solo para alumnos
+  departamento   String? // Solo para profesores
+
+  prestamos           Prestamo[]
+  prestamosHistoricos PrestamoHistorico[]
+  multas              Multa[]
+  multasHistoricas    MultaHistorica[]
+}
+
+model Libro {
+  id                       Int    @id @default(autoincrement())
+  isbn                     String @unique
+  titulo                   String
+  autor                    String
+  numPaginas               Int
+  numEjemplares            Int // Total comprados
+  numEjemplaresDisponibles Int
+  portadaURL               String
+
+  ejemplares             Ejemplar[]
+  recomendacionesOrigen  Recomendacion[] @relation("LibroOrigen")
+  recomendacionesDestino Recomendacion[] @relation("LibroRecomendado")
+}
+
+model Ejemplar {
+  id               Int      @id @default(autoincrement())
+  codigoEjemplar   String   @unique
+  fechaAdquisicion DateTime
+  observaciones    String?
+  estado           String   
+  libroId Int
+  libro   Libro @relation(fields: [libroId], references: [id])
+
+  prestamos           Prestamo[]
+  prestamosHistoricos PrestamoHistorico[]
+}
+
+model Prestamo {
+  id                  Int      @id @default(autoincrement())
+  fechaInicio         DateTime
+  deberiaDevolverseEl DateTime
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  ejemplarId Int
+  ejemplar   Ejemplar @relation(fields: [ejemplarId], references: [id])
+}
+
+model PrestamoHistorico {
+  id                  Int      @id @default(autoincrement())
+  fechaInicio         DateTime
+  deberiaDevolverseEl DateTime
+  fechaDevolucion     DateTime
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  ejemplarId Int
+  ejemplar   Ejemplar @relation(fields: [ejemplarId], references: [id])
+
+  multaId Int?
+  multa   Multa? @relation(fields: [multaId], references: [id])
+}
+
+model Multa {
+  id          Int      @id @default(autoincrement())
+  fechaInicio DateTime
+  dias        Int // Días acumulados
+  fechaFin    DateTime
+  monto       Decimal  @default(0.00) @db.Decimal(10, 2)
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  prestamosHistoricos PrestamoHistorico[]
+}
+
+model MultaHistorica {
+  id          Int      @id @default(autoincrement())
+  fechaInicio DateTime
+  fechaFin    DateTime
+  monto       Decimal  @default(0.00) @db.Decimal(10, 2)
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+model Recomendacion {
+  id         Int    @id @default(autoincrement())
+  comentario String
+
+  libroOrigenId Int
+  libroOrigen   Libro @relation("LibroOrigen", fields: [libroOrigenId], references: [id])
+
+  libroRecomendadoId Int
+  libroRecomendado   Libro @relation("LibroRecomendado", fields: [libroRecomendadoId], references: [id])
+}

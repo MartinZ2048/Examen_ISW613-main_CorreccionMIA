@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "titulo": "Cien años de soledad",
+    "autor": "Gabriel García Márquez",
+    "portadaURL": "https://covers.openlibrary.org/b/id/8376721-L.jpg",
+    "numPaginas": 417,
+    "numEjemplaresDisponibles": 4
+  },
+  {
+    "id": 2,
+    "titulo": "El Principito",
+    "autor": "Antoine de Saint-Exupéry",
+    "portadaURL": "https://covers.openlibrary.org/b/id/8221251-L.jpg",
+    "numPaginas": 96,
+    "numEjemplaresDisponibles": 2
+  }
+]
