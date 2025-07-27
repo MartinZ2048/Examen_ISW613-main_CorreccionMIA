@@ -1,10 +1,10 @@
-// src/pages/LoginPage.jsx
-import React from 'react';
+import React from 'react';  
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 export default function LoginPage() {
-  const { isAuthenticated, login, user, isLoading } = useAuth();
+  // ⭐ CORRECCIÓN: Solo pedimos las variables que realmente usamos.
+  const { isAuthenticated, login, isLoading } = useAuth();
 
   // Si ya está autenticado, redirigir a libros
   if (isAuthenticated) {
@@ -117,6 +117,7 @@ const styles = {
     width: '100%',
     marginBottom: '1rem',
   },
+
   info: {
     marginTop: '1.5rem',
     padding: '1rem',
