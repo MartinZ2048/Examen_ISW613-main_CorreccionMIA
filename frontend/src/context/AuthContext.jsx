@@ -1,53 +1,48 @@
-// frontend/src/context/AuthContext.jsx
-
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import keycloak from '../keycloak';
-import { getMyProfile } from '../services/api'; // 1. IMPORTAMOS LA FUNCIÓN DE LA API
+import { getMyProfile } from '../services/api';
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // 'user' ahora guardará el perfil COMPLETO de nuestra base de datos
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Usamos useCallback para evitar que esta función se recree en cada render
+  // ⭐ CORRECCIÓN KEYCLOAK: Usamos useRef para evitar la doble inicialización en React 18 Strict Mode
+  const isRun = useRef(false);
+
   const syncProfile = useCallback(async () => {
     try {
-      // 2. LLAMAMOS AL ENDPOINT /api/auth/profile usando nuestro servicio
       const profileResponse = await getMyProfile();
       if (profileResponse.success) {
-        // 3. GUARDAMOS EL PERFIL DE LA DB EN EL ESTADO
-        // Este objeto 'user' ahora sí contiene el id numérico de tu base de datos.
         setUser(profileResponse.data);
       } else {
         throw new Error(profileResponse.message);
       }
     } catch (error) {
       console.error("Error sincronizando el perfil:", error);
-      // Si falla, es mejor desloguear al usuario para evitar un estado inconsistente
       logout();
     }
   }, []);
 
   useEffect(() => {
+    // Si ya se ejecutó una vez, no hacemos nada.
+    if (isRun.current) return;
+    isRun.current = true; // Marcamos que ya se ejecutó.
+
     const initKeycloak = async () => {
       try {
-        const authenticated = await keycloak.init({ onLoad: 'check-sso' });
+        const authenticated = await keycloak.init({ 
+          onLoad: 'check-sso',
+          silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+          checkLoginIframe: false,
+        });
         setIsAuthenticated(authenticated);
 
         if (authenticated) {
-          // Si Keycloak dice que el usuario está autenticado,
-          // sincronizamos su perfil con nuestro backend.
           await syncProfile();
         }
       } catch (error) {
@@ -58,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initKeycloak();
-  }, [syncProfile]); // syncProfile es una dependencia del efecto
+  }, [syncProfile]);
 
   const login = () => {
     keycloak.login();
@@ -71,11 +66,10 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     isAuthenticated,
-    user, // Este 'user' ahora tiene el id, nombre, email, etc., de tu DB
+    user,
     isLoading,
     login,
     logout,
-    // Ya no necesitamos exportar getToken o keycloak directamente
   };
 
   return (
