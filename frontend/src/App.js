@@ -1,20 +1,21 @@
+// frontend/src/App.js
+
+import React from 'react';
 import './App.css';
-import React from "react";
-import { BrowserRouter } from "react-router-dom";
-import AppRouter from "./routes/AppRouter";
-import Navbar from "./components/Navbar";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from './context/AuthContext';
+import AppRouter from './routes/AppRouter';
 
-//import AppRouter from "./routes/AppRouter";
-
+/**
+ * Este es el componente raíz de la aplicación.
+ * Su única responsabilidad es configurar los "proveedores" globales
+ * que necesitan todos los demás componentes, como el AuthProvider
+ * para la autenticación y el AppRouter para la navegación.
+ */
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Navbar />
-        <AppRouter />
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
   );
 }
 
